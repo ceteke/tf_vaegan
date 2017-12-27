@@ -23,7 +23,7 @@ class EncoderBase(ModuleBase):
   def __init__(self, latent_size, learning_rate, initializer=None,
                regularizer=None, dtype=tf.float32):
     ModuleBase.__init__(self, learning_rate, initializer, regularizer, dtype)
-    self.optimizer = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
+    self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
     self.latent_size = latent_size
     self.scope_name = 'enc'
 
@@ -43,12 +43,12 @@ class EncoderBase(ModuleBase):
 class DecoderBase(ModuleBase):
   def __init__(self, learning_rate, initializer=None, regularizer=None, dtype=tf.float32):
     ModuleBase.__init__(self, learning_rate, initializer, regularizer, dtype)
-    self.optimizer = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
+    self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
     self.scope_name = 'dec'
 
 
 class DiscriminatorBase(ModuleBase):
   def __init__(self, learning_rate, initializer=None, regularizer=None, dtype=tf.float32):
     ModuleBase.__init__(self, learning_rate, initializer, regularizer, dtype)
-    self.optimizer = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
+    self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
     self.scope_name = 'dis'

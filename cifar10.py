@@ -5,7 +5,7 @@ from models.dcvaegan import DCVAEGAN
 cifar = CIFAR10('cifar10')
 (X_train_cifar, y_train_cifar), (X_test_cifar, y_test_cifar) = cifar.build_dataset(grayscale=False, flat=False)
 
-model = DCVAEGAN([64, 32, 32, 3], 1e-5, 0.0003, tb_id=1)
+model = DCVAEGAN([64, 32, 32, 3], 0.1, 0.0002, tb_id=1)
 model.compile()
 
 for e in range(100):
