@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 class VAEGANBase(object):
-  def __init__(self, input_shape, gamma, dtype=tf.float32, verbose=1):
+  def __init__(self, input_shape, gamma, tb_id, dtype=tf.float32, verbose=1):
     self.input_shape = input_shape
     self.dtype = dtype
     self.gamma = gamma
@@ -9,6 +9,8 @@ class VAEGANBase(object):
     self.decoder = None
     self.discriminator = None
     self.verbose = verbose
+    self.global_step = 0
+    self.tb_id = tb_id
 
   def form_variables(self):
     self.input = tf.placeholder(dtype=self.dtype, shape=self.input_shape, name='input')
@@ -21,17 +23,17 @@ class VAEGANBase(object):
     return tf.random_normal(shape=[self.input_shape[0], latent_size])
 
   def build_graph(self):
-    z, mu, sigma = self.encoder(self.input, reuse=False)
+    z, mu, sigma = self.encoder(self.input, training=self.training, reuse=False)
 
-    x_tilda = self.decoder(z, reuse=False)
+    x_tilda = self.decoder(z, training=self.training, reuse=False)
 
-    dis_l_tilda, fake_disc = self.discriminator(x_tilda, reuse=False)
-    dis_l_x, real_disc = self.discriminator(self.input)
+    dis_l_tilda, fake_disc = self.discriminator(x_tilda, training=self.training, reuse=False)
+    dis_l_x, real_disc = self.discriminator(self.input, training=self.training)
 
     z_p = self.sample_latent(self.encoder.latent_size)
-    x_p = self.decoder(z_p)
+    x_p = self.decoder(z_p, training=self.training)
 
-    _, sampled_disc = self.discriminator(x_p)
+    _, sampled_disc = self.discriminator(x_p, training=self.training)
 
     # Reconstruction Loss (not pixelwise but featurewise)
     feature_loss = tf.losses.mean_squared_error(dis_l_x, dis_l_tilda) # Gaussian loss has some 1/sqrt(pi) stuff but since we are optimizing with the same constants everytime this is simply squared error
@@ -68,22 +70,33 @@ class VAEGANBase(object):
     dis_grads = self.discriminator.optimizer.compute_gradients(self.discriminator_loss, var_list=self.d_vars)
     self.dis_update_op = self.discriminator.optimizer.apply_gradients(dis_grads)
 
+    tf.summary.scalar('enc_loss', self.encoder_loss)
+    tf.summary.scalar('dec_loss', self.generator_loss)
+    tf.summary.scalar('dis_loss', self.discriminator_loss)
+    tf.summary.image('reconstructed', x_tilda)
+    tf.summary.image('sampled', x_p)
+    tf.summary.image('input', self.input)
+    self.merged = tf.summary.merge_all()
+
   def compile(self):
     self.form_variables()
     self.build_graph()
     self.sess = tf.Session()
     self.sess.run(tf.global_variables_initializer())
+    self.train_writer = tf.summary.FileWriter('log/{}/train'.format(self.tb_id), self.sess.graph)
 
   def fit(self, X):
+    self.global_step += 1
     t = self.sess.run([self.encoder_loss, self.generator_loss, self.discriminator_loss,
-                       self.enc_update_op, self.dec_update_op, self.dis_update_op],
-                      feed_dict={'input': X,
-                                 'training': True})
+                       self.enc_update_op, self.dec_update_op, self.dis_update_op, self.merged],
+                      feed_dict={self.input: X,
+                                 self.training: True})
+    self.train_writer.add_summary(t[-1], self.global_step)
     return t[0], t[1], t[2]
 
   def eval(self, X):
     t = self.sess.run([self.encoder_loss, self.generator_loss, self.discriminator_loss,
                        self.enc_update_op, self.dec_update_op, self.dis_update_op],
-                      feed_dict={'input': X,
-                                 'training': False})
+                      feed_dict={self.input: X,
+                                 self.training: False})
     return t[0], t[1], t[2]

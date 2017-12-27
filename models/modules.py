@@ -13,22 +13,22 @@ class ModuleBase(object):
     self.learning_rate = learning_rate
     self.dtype = dtype
 
-  def __call__(self, x, reuse=True):
-    return self.net(x, reuse)
+  def __call__(self, x, training, reuse=True):
+    return self.net(x, training, reuse)
 
-  def net(self, x, reuse):
+  def net(self, x, training, reuse):
     raise NotImplemented
 
 class EncoderBase(ModuleBase):
   def __init__(self, latent_size, learning_rate, initializer=None,
                regularizer=None, dtype=tf.float32):
     ModuleBase.__init__(self, learning_rate, initializer, regularizer, dtype)
-    self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
+    self.optimizer = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
     self.latent_size = latent_size
     self.scope_name = 'enc'
 
-  def __call__(self, x, reuse=True):
-    hidden = self.net(x, reuse)
+  def __call__(self, x, training, reuse=True):
+    hidden = self.net(x, training, reuse)
     with tf.variable_scope(self.scope_name, reuse=reuse):
       mu = tf.layers.dense(hidden, self.latent_size, kernel_initializer=self.initializer,
                            bias_initializer=self.bias_initializer, kernel_regularizer=self.regularizer, name='mu')
@@ -43,12 +43,12 @@ class EncoderBase(ModuleBase):
 class DecoderBase(ModuleBase):
   def __init__(self, learning_rate, initializer=None, regularizer=None, dtype=tf.float32):
     ModuleBase.__init__(self, learning_rate, initializer, regularizer, dtype)
-    self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
+    self.optimizer = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
     self.scope_name = 'dec'
 
 
 class DiscriminatorBase(ModuleBase):
   def __init__(self, learning_rate, initializer=None, regularizer=None, dtype=tf.float32):
     ModuleBase.__init__(self, learning_rate, initializer, regularizer, dtype)
-    self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
+    self.optimizer = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
     self.scope_name = 'dis'
