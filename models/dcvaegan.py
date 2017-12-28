@@ -21,8 +21,8 @@ class DCDecoder(DecoderBase):
 
   def net(self, x, training, reuse):
     with tf.variable_scope(self.scope_name, reuse=reuse) as scope:
-      d1 = tf.layers.dense(x, 4*4*256, activation=tf.nn.relu, name='fc')
-      d1 = tf.reshape(d1, [-1, 4, 4, 256])
+      d1 = tf.layers.dense(x, 8*8*256, activation=tf.nn.relu, name='fc')
+      d1 = tf.reshape(d1, [-1, 8, 8, 256])
       d2 = conv_transpose_bn_act(d1, 256, 5, (2, 2), padding='SAME', activation=tf.nn.relu, name='deconv1', training=training, reuse=reuse)
       d3 = conv_transpose_bn_act(d2, 128, 5, (2, 2), padding='SAME', activation=tf.nn.relu, name='deconv2', training=training, reuse=reuse)
       d4 = conv_transpose_bn_act(d3, 32, 5, (2, 2), padding='SAME', activation=tf.nn.relu, name='deconv3', training=training, reuse=reuse)
@@ -46,8 +46,8 @@ class DCDiscriminator(DiscriminatorBase):
     return reconstruction_layer, output
 
 class DCVAEGAN(VAEGANBase):
-  def __init__(self, input_shape, gamma, learning_rate, tb_id):
-    VAEGANBase.__init__(self, input_shape, gamma, tb_id)
+  def __init__(self, input_shape, learning_rate, tb_id):
+    VAEGANBase.__init__(self, input_shape, tb_id)
     self.encoder = DCEncoder(512, learning_rate)
     self.decoder = DCDecoder(learning_rate)
     self.discriminator = DCDiscriminator(learning_rate)

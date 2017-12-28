@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 import matplotlib.image as mpimg
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile, join, splitext
 from skimage import transform, filters
 import joblib
 
@@ -12,25 +12,35 @@ class CelebA(object):
   def __init__(self, path):
     self.path = path
 
-  def build_dataset(self, bbox=(40, 218-30, 15, 178-15), rescale_size=64):
-    with joblib.Parallel(n_jobs=-2) as parallel:
-        imgs = parallel(joblib.delayed(self.process_image)
-                        (img, bbox, rescale_size) for img in self.load_images())
-    return np.array(imgs)
+  def preprocess_dataset(self, n_jobs=32, bbox=(40, 218-30, 15, 178-15), rescale_size=64):
+    with joblib.Parallel(n_jobs=n_jobs, verbose=1) as parallel:
+      parallel(joblib.delayed(self.process_image)
+               (name, img, bbox, rescale_size) for name, img in self.load_images())
+
+  def load_dataset(self, n_jobs):
+    with joblib.Parallel(n_jobs=n_jobs, verbose=1) as parallel:
+      images = parallel(joblib.delayed(self.load)(join('celeba', f))
+                        for f in listdir('celeba/') if isfile(join('celeba', f)))
+    return np.array(images)
+
+  def load(self, f):
+    return pickle.load(open(f, 'rb'))
 
   def load_images(self):
     for f in listdir(self.path):
       if isfile(join(self.path, f)):
         img_path = join(self.path, f)
         img = self.load_image(img_path)
-        yield img
+        yield splitext(f)[0], img
 
-  def process_image(self, img, bbox, rescale_size):
+  def process_image(self, name, img, bbox, rescale_size):
     img = img[bbox[0]:bbox[1], bbox[2]:bbox[3]]
     scale = img.shape[0] / float(rescale_size)
     sigma = np.sqrt(scale) / 2.0
     img = filters.gaussian(img, sigma=sigma, multichannel=True)
     img = transform.resize(img, (rescale_size, rescale_size, 3), order=3, mode='constant')
+    img = img.astype(np.float16)
+    pickle.dump(img, open('celeba/{}.pk'.format(name), 'wb'))
     return img
 
   def load_image(self, path):

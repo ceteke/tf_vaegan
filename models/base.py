@@ -1,16 +1,17 @@
 import tensorflow as tf
+from .tf_utils import NLLNormal
 
 class VAEGANBase(object):
-  def __init__(self, input_shape, gamma, tb_id, dtype=tf.float32, verbose=1):
+  def __init__(self, input_shape, tb_id, dtype=tf.float32, verbose=1):
     self.input_shape = input_shape
     self.dtype = dtype
-    self.gamma = gamma
     self.encoder = None
     self.decoder = None
     self.discriminator = None
     self.verbose = verbose
     self.global_step = 0
     self.tb_id = tb_id
+    self.gamma = 1e-1
 
   def form_variables(self):
     self.input = tf.placeholder(dtype=self.dtype, shape=self.input_shape, name='input')
@@ -27,7 +28,6 @@ class VAEGANBase(object):
 
     x_tilda = self.decoder(z, training=self.training, reuse=False)
     dis_l_tilda, fake_disc = self.discriminator(x_tilda, training=self.training, reuse=False)
-    print(self.input, x_tilda)
     dis_l_x, real_disc = self.discriminator(self.input, training=self.training)
 
     z_p = self.sample_latent(self.encoder.latent_size)
@@ -36,10 +36,11 @@ class VAEGANBase(object):
     _, sampled_disc = self.discriminator(x_p, training=self.training)
 
     # Reconstruction Loss (not pixelwise but featurewise)
-    feature_loss = tf.losses.mean_squared_error(dis_l_x, dis_l_tilda) # Gaussian loss has some 1/sqrt(pi) stuff but since we are optimizing with the same constants everytime this is simply squared error
+    feature_loss = -tf.reduce_mean(NLLNormal(dis_l_x, dis_l_tilda, tf.zeros_like(dis_l_tilda)))
 
     # Encoder Loss
-    prior_loss = self.kl_divergence(mu, sigma)
+    prior_loss = tf.reduce_mean(self.kl_divergence(mu, sigma))
+
     self.encoder_loss = prior_loss + feature_loss
 
     # Discriminator Loss
