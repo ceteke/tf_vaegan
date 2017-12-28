@@ -28,8 +28,8 @@ class EncoderBase(ModuleBase):
     self.scope_name = 'enc'
 
   def __call__(self, x, training, reuse=True):
-    hidden = self.net(x, training, reuse)
     with tf.variable_scope(self.scope_name, reuse=reuse):
+      hidden = self.net(x, training, reuse)
       mu = tf.layers.dense(hidden, self.latent_size, kernel_initializer=self.initializer,
                            bias_initializer=self.bias_initializer, kernel_regularizer=self.regularizer, name='mu')
       log_sigm_sq = tf.layers.dense(hidden, self.latent_size, kernel_initializer=self.initializer,

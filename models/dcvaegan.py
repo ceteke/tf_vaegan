@@ -1,21 +1,18 @@
 from .modules import DiscriminatorBase, EncoderBase, DecoderBase
 from .base import VAEGANBase
 import tensorflow as tf
+from .mylayers import conv_bn_act, conv_transpose_bn_act
 
 class DCEncoder(EncoderBase):
   def __init__(self, latent_size, learning_rate):
     EncoderBase.__init__(self, latent_size, learning_rate)
 
   def net(self, x, training, reuse):
-    with tf.variable_scope(self.scope_name, reuse=reuse) as scope:
-      c1 = tf.layers.conv2d(x, 64, 5, (2, 2), padding='SAME', activation=tf.nn.relu,
-                            kernel_initializer=self.initializer, kernel_regularizer=self.regularizer, name='conv1')
-      c2 = tf.layers.conv2d(c1, 128, 5, (2, 2), padding='SAME', activation=tf.nn.relu,
-                            kernel_initializer=self.initializer, kernel_regularizer=self.regularizer, name='conv2')
-      c2 = tf.contrib.layers.flatten(c2)
-      hidden = tf.layers.dense(c2, 1024, activation=tf.nn.relu, kernel_initializer=self.initializer,
-                               kernel_regularizer=self.regularizer, name='fc')
-      hidden = tf.contrib.layers.flatten(hidden)
+    c1 = conv_bn_act(x, 64, 5, (2, 2), padding='SAME', activation=tf.nn.relu, name='conv1', training=training, reuse=reuse)
+    c2 = conv_bn_act(c1, 128, 5, (2, 2), padding='SAME', activation=tf.nn.relu, name='conv2', training=training, reuse=reuse)
+    c3 = conv_bn_act(c2, 256, 5, (2, 2), padding='SAME', activation=tf.nn.relu, name='conv3', training=training, reuse=reuse)
+    c3 = tf.contrib.layers.flatten(c3)
+    hidden = tf.layers.dense(c3, 2048, activation=tf.nn.relu, name='fc')
     return hidden
 
 class DCDecoder(DecoderBase):
@@ -24,18 +21,12 @@ class DCDecoder(DecoderBase):
 
   def net(self, x, training, reuse):
     with tf.variable_scope(self.scope_name, reuse=reuse) as scope:
-      d1 = tf.layers.dense(x, 8*8*128, activation=tf.nn.relu, kernel_initializer=self.initializer,
-                           kernel_regularizer=self.regularizer, name='fc')
-      d1 = tf.reshape(d1, [-1, 8, 8, 128])
-      d3 = tf.layers.conv2d_transpose(d1, 128, 5, (2, 2), padding='SAME', activation=tf.nn.relu,
-                                      kernel_initializer=self.initializer, kernel_regularizer=self.regularizer,
-                                      name='deconv1')
-      d4 = tf.layers.conv2d_transpose(d3, 32, 5, (2, 2), padding='SAME', activation=tf.nn.relu,
-                                      kernel_initializer=self.initializer, kernel_regularizer=self.regularizer,
-                                      name='deconv2')
-      d5 = tf.layers.conv2d_transpose(d4, 3, 5, (1, 1), activation=tf.nn.sigmoid, padding='SAME',
-                                      kernel_initializer=self.initializer, kernel_regularizer=self.regularizer,
-                                      name='deconv4')
+      d1 = tf.layers.dense(x, 4*4*256, activation=tf.nn.relu, name='fc')
+      d1 = tf.reshape(d1, [-1, 4, 4, 256])
+      d2 = conv_transpose_bn_act(d1, 256, 5, (2, 2), padding='SAME', activation=tf.nn.relu, name='deconv1', training=training, reuse=reuse)
+      d3 = conv_transpose_bn_act(d2, 128, 5, (2, 2), padding='SAME', activation=tf.nn.relu, name='deconv2', training=training, reuse=reuse)
+      d4 = conv_transpose_bn_act(d3, 32, 5, (2, 2), padding='SAME', activation=tf.nn.relu, name='deconv3', training=training, reuse=reuse)
+      d5 = conv_transpose_bn_act(d4, 3, 5, (1, 1), padding='SAME', activation=tf.nn.tanh, name='deconv4', training=training, reuse=reuse)
     return d5
 
 class DCDiscriminator(DiscriminatorBase):
@@ -44,18 +35,14 @@ class DCDiscriminator(DiscriminatorBase):
 
   def net(self, x, training, reuse):
     with tf.variable_scope(self.scope_name, reuse=reuse) as scope:
-      c1 = tf.layers.conv2d(x, 32, 5, (1, 1), padding='SAME', activation=tf.nn.relu,
-                            kernel_initializer=self.initializer, kernel_regularizer=self.regularizer, name='conv1')
-      c2 = tf.layers.conv2d(c1, 128, 5, (2, 2), padding='SAME', activation=tf.nn.relu,
-                            kernel_initializer=self.initializer, kernel_regularizer=self.regularizer, name='conv2')
-      c3 = tf.layers.conv2d(c2, 256, 5, (2, 2), padding='SAME', activation=tf.nn.relu,
-                            kernel_initializer=self.initializer, kernel_regularizer=self.regularizer, name='conv3')
-      reconstruction_layer = c3
-      c3 = tf.contrib.layers.flatten(c3)
-      hidden = tf.layers.dense(c3, 512, activation=tf.nn.relu, kernel_initializer=self.initializer,
-                               kernel_regularizer=self.regularizer, name='fc1')
-      output = tf.layers.dense(hidden, 1, kernel_initializer=self.initializer, kernel_regularizer=self.regularizer,
-                               name='fc2')
+      c1 = conv_bn_act(x, 32, 5, (1, 1), padding='SAME', activation=tf.nn.relu, name='conv1', training=training, reuse=reuse)
+      c2 = conv_bn_act(c1, 128, 5, (2, 2), padding='SAME', activation=tf.nn.relu, name='conv2', training=training, reuse=reuse)
+      c3 = conv_bn_act(c2, 256, 5, (2, 2), padding='SAME', activation=tf.nn.relu, name='conv3', training=training, reuse=reuse)
+      c4 = conv_bn_act(c3, 256, 5, (2, 2), padding='SAME', activation=tf.nn.relu, name='conv4', training=training, reuse=reuse)
+      reconstruction_layer = c4
+      c4 = tf.contrib.layers.flatten(c4)
+      hidden = tf.layers.dense(c4, 512, activation=tf.nn.relu, kernel_initializer=self.initializer, name='fc1')
+      output = tf.layers.dense(hidden, 1, name='fc2')
     return reconstruction_layer, output
 
 class DCVAEGAN(VAEGANBase):

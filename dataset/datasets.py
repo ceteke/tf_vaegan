@@ -2,28 +2,41 @@ import os, struct
 from array import array as pyarray
 import numpy as np
 import pickle
+import matplotlib.image as mpimg
+from os import listdir
+from os.path import isfile, join
+from skimage import transform, filters
+import joblib
 
-def batchify(X, y, n):
-  l = len(X)
-  for ndx in range(0, l, n):
-    yield X[ndx:min(ndx + n, l)], y[ndx:min(ndx + n, l)]
+class CelebA(object):
+  def __init__(self, path):
+    self.path = path
 
-def batchify_single(X, n):
-  l = len(X)
-  for ndx in range(0, l, n):
-    yield X[ndx:min(ndx + n, l)]
+  def build_dataset(self, bbox=(40, 218-30, 15, 178-15), rescale_size=64):
+    with joblib.Parallel(n_jobs=-2) as parallel:
+        imgs = parallel(joblib.delayed(self.process_image)
+                        (img, bbox, rescale_size) for img in self.load_images())
+    return np.array(imgs)
 
-def get_subset(X_train, y_train, train_size):
-  labels = [np.where(y_train == label)[0] for label in range(10)]
-  for i, l in enumerate(labels):
-    np.random.shuffle(l)
+  def load_images(self):
+    for f in listdir(self.path):
+      if isfile(join(self.path, f)):
+        img_path = join(self.path, f)
+        img = self.load_image(img_path)
+        yield img
 
-  train_indexes = np.concatenate([l[:train_size] for l in labels])
-  np.random.shuffle(train_indexes)
-  X_train_subset = np.take(X_train, train_indexes, axis=0)
-  y_train_subset = np.take(y_train, train_indexes, axis=0)
+  def process_image(self, img, bbox, rescale_size):
+    img = img[bbox[0]:bbox[1], bbox[2]:bbox[3]]
+    scale = img.shape[0] / float(rescale_size)
+    sigma = np.sqrt(scale) / 2.0
+    img = filters.gaussian(img, sigma=sigma, multichannel=True)
+    img = transform.resize(img, (rescale_size, rescale_size, 3), order=3, mode='constant')
+    return img
 
-  return X_train_subset, y_train_subset
+  def load_image(self, path):
+    img = mpimg.imread(path)
+    img = img.astype(np.float16)
+    return img / 255
 
 class MNIST(object):
   def __init__(self, path):

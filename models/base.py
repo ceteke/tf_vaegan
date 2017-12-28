@@ -20,14 +20,14 @@ class VAEGANBase(object):
     return -0.5 * tf.reduce_sum(1 + tf.log(tf.square(sigma)) - tf.square(mu) - tf.square(sigma))
 
   def sample_latent(self, latent_size):
-    return tf.random_normal(shape=[self.input_shape[0], latent_size])
+    return tf.random_normal(shape=[self.input_shape[0], latent_size], name='prior')
 
   def build_graph(self):
     z, mu, sigma = self.encoder(self.input, training=self.training, reuse=False)
 
     x_tilda = self.decoder(z, training=self.training, reuse=False)
-
     dis_l_tilda, fake_disc = self.discriminator(x_tilda, training=self.training, reuse=False)
+    print(self.input, x_tilda)
     dis_l_x, real_disc = self.discriminator(self.input, training=self.training)
 
     z_p = self.sample_latent(self.encoder.latent_size)
