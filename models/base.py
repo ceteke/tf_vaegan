@@ -1,8 +1,8 @@
 import tensorflow as tf
-from .tf_utils import NLLNormal
+from os.path import join
 
 class VAEGANBase(object):
-  def __init__(self, input_shape, tb_id, dtype=tf.float32, verbose=1):
+  def __init__(self, input_shape, gamma, tb_id, dtype=tf.float32, verbose=1):
     self.input_shape = input_shape
     self.dtype = dtype
     self.encoder = None
@@ -11,17 +11,20 @@ class VAEGANBase(object):
     self.verbose = verbose
     self.global_step = 0
     self.tb_id = tb_id
-    self.gamma = 1e-1
+    self.gamma = gamma
+
+  def save(self, path):
+    self.saver.save(self.sess, join(path, 'vaegan'))
 
   def form_variables(self):
     self.input = tf.placeholder(dtype=self.dtype, shape=self.input_shape, name='input')
     self.training = tf.placeholder(dtype=tf.bool, name='training')
 
   def kl_divergence(self, mu, sigma):
-    return -0.5 * tf.reduce_sum(1 + tf.log(tf.square(sigma)) - tf.square(mu) - tf.square(sigma))
+    return -0.5 * tf.reduce_sum(1 + tf.log(tf.square(sigma)) - tf.square(mu) - tf.square(sigma), -1)
 
-  def sample_latent(self, latent_size):
-    return tf.random_normal(shape=[self.input_shape[0], latent_size], name='prior')
+  def sample_latent(self):
+    return tf.random_normal(shape=[self.input_shape[0], self.encoder.latent_size], name='prior')
 
   def build_graph(self):
     z, mu, sigma = self.encoder(self.input, training=self.training, reuse=False)
@@ -30,14 +33,13 @@ class VAEGANBase(object):
     dis_l_tilda, fake_disc = self.discriminator(x_tilda, training=self.training, reuse=False)
     dis_l_x, real_disc = self.discriminator(self.input, training=self.training)
 
-    z_p = self.sample_latent(self.encoder.latent_size)
+    z_p = self.sample_latent()
     x_p = self.decoder(z_p, training=self.training)
 
     _, sampled_disc = self.discriminator(x_p, training=self.training)
 
     # Reconstruction Loss (not pixelwise but featurewise)
-    feature_loss = -tf.reduce_mean(NLLNormal(dis_l_x, dis_l_tilda, tf.zeros_like(dis_l_tilda)))
-
+    feature_loss = tf.reduce_mean(0.5*tf.reduce_sum(tf.square(dis_l_x-dis_l_tilda), 1))
     # Encoder Loss
     prior_loss = tf.reduce_mean(self.kl_divergence(mu, sigma))
 
@@ -56,13 +58,19 @@ class VAEGANBase(object):
 
     # Get each network's parameters
     t_vars = tf.trainable_variables()
-    if self.verbose == 1:
-      for var in t_vars:
-        print(var)
     self.d_vars = [var for var in t_vars if 'dis' in var.name]
     self.g_vars = [var for var in t_vars if 'dec' in var.name]
     self.e_vars = [var for var in t_vars if 'enc' in var.name]
-
+    if self.verbose == 1:
+      print("Discrimnator Variables:")
+      for d_var in self.d_vars:
+        print(d_var)
+      print("Generator (Decoder) Variables:")
+      for g_var in self.g_vars:
+        print(g_var)
+      print("Encoder Variables:")
+      for e_var in self.e_vars:
+        print(e_var)
     # Update parameters
     enc_grads = self.encoder.optimizer.compute_gradients(self.encoder_loss, var_list=self.e_vars)
     self.enc_update_op = self.encoder.optimizer.apply_gradients(enc_grads)
@@ -85,6 +93,7 @@ class VAEGANBase(object):
     self.sess = tf.Session()
     self.sess.run(tf.global_variables_initializer())
     self.train_writer = tf.summary.FileWriter('log/{}/train'.format(self.tb_id), self.sess.graph)
+    self.saver = tf.train.Saver()
 
   def fit(self, X):
     self.global_step += 1
