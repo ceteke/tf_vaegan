@@ -1,5 +1,6 @@
 import tensorflow as tf
 from os.path import join
+from .tf_utils import GaussianLogDensity
 
 class VAEGANBase(object):
   def __init__(self, input_shape, gamma, tb_id, dtype=tf.float32, verbose=1):
@@ -39,7 +40,11 @@ class VAEGANBase(object):
     _, sampled_disc = self.discriminator(x_p, training=self.training)
 
     # Reconstruction Loss (not pixelwise but featurewise)
-    feature_loss = tf.reduce_mean(0.5*tf.reduce_sum(tf.square(dis_l_x-dis_l_tilda), 1))
+    feature_loss = - tf.reduce_mean(
+                    GaussianLogDensity(
+                        dis_l_x,
+                        dis_l_tilda,
+                        tf.zeros_like(dis_l_x)))
     # Encoder Loss
     prior_loss = tf.reduce_mean(self.kl_divergence(mu, sigma))
 

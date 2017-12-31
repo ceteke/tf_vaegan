@@ -1,5 +1,5 @@
 from dataset.mnist import MNIST
-from models.dcvaegan import DCVAEGAN
+from models.vaegan import DCVAEGAN
 
 mnist = MNIST('digit')
 (X_train, y_train), (X_test, y_test) = mnist.build_dataset(flat=False)

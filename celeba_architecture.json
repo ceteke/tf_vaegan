@@ -1,0 +1,42 @@
+{
+  "enc":{
+    "net":[
+      {"type": "conv", "kernel":[5,5], "units": 64, "stride": [2,2], "bnorm": 1, "act": "relu"},
+      {"type": "conv", "kernel":[5,5], "units": 128, "stride": [2,2], "bnorm": 1, "act": "relu"},
+      {"type": "conv", "kernel":[5,5], "units": 256, "stride": [2,2], "bnorm": 1, "act": "relu"},
+      {"type": "flatten"},
+      {"type": "fc", "units": 2048, "bnorm": 1, "act": "relu"}
+    ],
+    "z_dim": 128,
+    "opt": "adam",
+    "lr": 2e-4
+  },
+
+  "dec":{
+    "net":[
+      {"type": "fc", "units": 16384, "bnorm": 1, "act": "relu"},
+      {"type": "reshape", "shape": [-1, 8, 8, 256]},
+      {"type": "conv_t", "kernel":[5,5], "units": 256, "stride": [2,2], "bnorm": 1, "act": "relu"},
+      {"type": "conv_t", "kernel":[5,5], "units": 128, "stride": [2,2], "bnorm": 1, "act": "relu"},
+      {"type": "conv_t", "kernel":[5,5], "units": 32, "stride": [2,2], "bnorm": 1, "act": "relu"},
+      {"type": "conv_t", "kernel":[5,5], "units": 3, "stride": [1,1], "bnorm": 0, "act": "tanh"}
+    ],
+    "opt": "adam",
+    "lr": 2e-4
+  },
+
+  "dis":{
+    "net":[
+      {"type": "conv", "kernel":[5,5], "units": 32, "stride": [1,1], "bnorm": 0, "act": "relu"},
+      {"type": "conv", "kernel":[5,5], "units": 128, "stride": [2,2], "bnorm": 1, "act": "relu"},
+      {"type": "conv", "kernel":[5,5], "units": 256, "stride": [2,2], "bnorm": 1, "act": "relu"},
+      {"type": "conv", "kernel":[5,5], "units": 256, "stride": [2,2], "bnorm": 1, "act": "relu"},
+      {"type": "flatten"},
+      {"type": "fc", "units": 512, "bnorm": 1, "act": "relu"},
+      {"type": "fc", "units": 1, "bnorm":0}
+    ],
+    "opt": "adam",
+    "lr": 2e-4
+  },
+  "gamma": 1e-2
+}

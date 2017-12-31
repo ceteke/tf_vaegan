@@ -1,6 +1,6 @@
 from dataset.datasets import CIFAR10
 from dataset.utils import batchify
-from models.dcvaegan import DCVAEGAN
+from models.vaegan import DCVAEGAN
 
 cifar = CIFAR10('cifar10')
 (X_train_cifar, y_train_cifar), (X_test_cifar, y_test_cifar) = cifar.build_dataset(grayscale=False, flat=False)
