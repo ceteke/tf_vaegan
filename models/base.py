@@ -43,8 +43,7 @@ class VAEGANBase(object):
     feature_loss = - tf.reduce_mean(
                     GaussianLogDensity(
                         dis_l_x,
-                        dis_l_tilda,
-                        tf.zeros_like(dis_l_x)))
+                        dis_l_tilda))
     # Encoder Loss
     prior_loss = tf.reduce_mean(self.kl_divergence(mu, sigma))
 

@@ -10,12 +10,9 @@ def variable_decorator(name):
       return wrapper
   return decorator
 EPSILON = 1e-6
-def GaussianLogDensity(x, mu, log_var, name='GaussianLogDensity'):
-  c = np.log(2 * np.pi)
-  var = tf.exp(log_var)
-  x_mu2 = tf.square(x-mu)  # [Issue] not sure the dim works or not?
-  x_mu2_over_var = tf.div(x_mu2, var + EPSILON)
-  log_prob = -0.5 * (c + log_var + x_mu2_over_var)
+def GaussianLogDensity(x, mu, name='GaussianLogDensity'):
+  x_mu2 = tf.square(x-mu)
+  log_prob = -0.5 * (x_mu2)
   log_prob = tf.reduce_sum(log_prob, -1, name=name)  # keep_dims=True,
   return log_prob
 
