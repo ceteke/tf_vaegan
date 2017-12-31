@@ -41,3 +41,11 @@ class DecoderBase(ModuleBase):
 class DiscriminatorBase(ModuleBase):
   def __init__(self, arch, dtype=tf.float32):
     ModuleBase.__init__(self, arch, 'dis', dtype)
+    self.feature_layer = arch['feature_layer']
+
+  def net(self, x, training):
+    for i, layer in enumerate(self.arch['net']):
+      x = get_element_from_dict(x, layer, training)
+      if i == self.feature_layer - 1:
+        feature_layer = x
+    return feature_layer, x

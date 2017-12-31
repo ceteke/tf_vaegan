@@ -23,9 +23,9 @@ def get_element_from_dict(input, dict, training):
   t = dict['type']
 
   if t == 'conv':
-    layer = tf.layers.conv2d(input, dict['units'], dict['kernel'], dict['strides'], padding='SAME')
+    layer = tf.layers.conv2d(input, dict['units'], dict['kernel'], dict['stride'], padding='SAME')
   elif t == 'conv_t':
-    layer = tf.layers.conv2d_transpose(input, dict['units'], dict['kernel'], dict['strides'], padding='SAME')
+    layer = tf.layers.conv2d_transpose(input, dict['units'], dict['kernel'], dict['stride'], padding='SAME')
   elif t == 'fc':
     layer = tf.layers.dense(input, dict['units'])
   elif t == 'flatten':
@@ -38,7 +38,7 @@ def get_element_from_dict(input, dict, training):
   if dict['bnorm'] == 1:
     layer = tf.layers.batch_normalization(layer, training=training)
 
-  act = dict['act']
+  act = dict.get('act', None)
 
   if act == 'relu':
     return tf.nn.relu(layer)
@@ -46,7 +46,7 @@ def get_element_from_dict(input, dict, training):
     return tf.nn.tanh(layer)
   elif act == 'sigmoid':
     return tf.nn.sigmoid(layer)
-  elif act == 'linear':
+  elif act is None:
     return layer
   else:
     raise Exception("Unknown activation type")

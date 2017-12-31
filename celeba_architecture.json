@@ -36,7 +36,8 @@
       {"type": "fc", "units": 1, "bnorm":0}
     ],
     "opt": "adam",
-    "lr": 2e-4
+    "lr": 2e-4,
+    "feature_layer": 3
   },
   "gamma": 1e-2
 }
