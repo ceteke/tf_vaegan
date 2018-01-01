@@ -42,7 +42,7 @@ def get_element_from_dict(input, dict, training):
 def get_optimizer(name, lr, decay, total_steps, scope_name):
   with tf.variable_scope(scope_name) as scope:
     global_step = tf.Variable(0, trainable=False, name='global_step')
-    learning_rate = tf.train.exponential_decay(lr, global_step, staircase=True)
+    learning_rate = tf.train.exponential_decay(lr, global_step, total_steps, decay, staircase=True, name='lr_decay')
     if name == 'adam':
       return global_step, tf.train.AdamOptimizer(learning_rate=learning_rate)
     elif name == 'rmsprop':
