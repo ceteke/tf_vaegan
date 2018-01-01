@@ -32,6 +32,9 @@ def get_element_from_dict(input, dict, training):
 
   act = dict.get('act', None)
 
+  if dict['bnorm'] == 1:
+    layer = tf.layers.batch_normalization(layer, training=training)
+
   if act == 'relu':
     layer = tf.nn.relu(layer)
   elif act == 'tanh':
@@ -42,9 +45,6 @@ def get_element_from_dict(input, dict, training):
     layer = layer
   else:
     raise Exception("Unknown activation type")
-
-  if dict['bnorm'] == 1:
-    layer = tf.layers.batch_normalization(layer, training=training)
 
   return layer
 
