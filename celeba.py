@@ -3,12 +3,16 @@ from models.vaegan import VAEGAN
 from dataset.utils import batchify
 import json
 import argparse
+import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--arch', dest='arch', help='Path of the architecture file', required=True)
 parser.add_argument('--tb_id', dest='tb_id', help='Tensorboard log id and model id to save to storege/id', required=True)
 parser.add_argument('--n_jobs', dest='n_jobs', default=128, help='Jobs to run in parallel for reading the dataset', type=int)
+parser.add_argument('--device', dest='device_id', default=0, help='CUDA device to run the model', type=int)
 FLAGS = parser.parse_args()
+
+os.environ["CUDA_VISIBLE_DEVICES"] = FLAGS.device_id
 
 arch_json = json.load(open(FLAGS.arch))
 
