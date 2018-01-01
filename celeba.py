@@ -12,7 +12,7 @@ parser.add_argument('--n_jobs', dest='n_jobs', default=128, help='Jobs to run in
 parser.add_argument('--device', dest='device_id', default=0, help='CUDA device to run the model', type=int)
 FLAGS = parser.parse_args()
 
-os.environ["CUDA_VISIBLE_DEVICES"] = FLAGS.device_id
+os.environ["CUDA_VISIBLE_DEVICES"] = str(FLAGS.device_id)
 
 arch_json = json.load(open(FLAGS.arch))
 
