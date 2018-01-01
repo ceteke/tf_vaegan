@@ -2,11 +2,11 @@ import tensorflow as tf
 from .tf_utils import get_element_from_dict, get_optimizer
 
 class ModuleBase(object):
-  def __init__(self, arch, scope_name, dtype):
+  def __init__(self, arch, optimizer_name, lr, decay, total_steps, scope_name, dtype):
     self.dtype = dtype
     self.arch = arch
     self.scope_name = scope_name
-    self.optimizer = get_optimizer(arch['opt'], arch['lr'])
+    self.global_step, self.optimizer = get_optimizer(optimizer_name, lr, decay, total_steps, scope_name)
 
   def __call__(self, x, training, reuse=True):
     with tf.variable_scope(self.scope_name, reuse=reuse) as scope:
@@ -18,8 +18,8 @@ class ModuleBase(object):
     return x
 
 class EncoderBase(ModuleBase):
-  def __init__(self, arch, dtype=tf.float32):
-    ModuleBase.__init__(self, arch, 'enc', dtype)
+  def __init__(self, arch, optimizer_name, lr, decay, total_steps, dtype=tf.float32):
+    ModuleBase.__init__(self, arch, optimizer_name, lr, decay, total_steps, 'enc', dtype)
     self.latent_size = arch['z_dim']
 
   def __call__(self, x, training, reuse=True):
@@ -34,13 +34,13 @@ class EncoderBase(ModuleBase):
 
 
 class DecoderBase(ModuleBase):
-  def __init__(self, arch, dtype=tf.float32):
-    ModuleBase.__init__(self, arch, 'dec', dtype)
+  def __init__(self, arch, optimizer_name, lr, decay, total_steps, dtype=tf.float32):
+    ModuleBase.__init__(self, arch, optimizer_name, lr, decay, total_steps, 'dec', dtype)
 
 
 class DiscriminatorBase(ModuleBase):
-  def __init__(self, arch, dtype=tf.float32):
-    ModuleBase.__init__(self, arch, 'dis', dtype)
+  def __init__(self, arch, optimizer_name, lr, decay, total_steps, dtype=tf.float32):
+    ModuleBase.__init__(self, arch, optimizer_name, lr, decay, total_steps, 'dis', dtype)
     self.feature_layer = arch['feature_layer']
 
   def net(self, x, training):

@@ -16,15 +16,18 @@ os.environ["CUDA_VISIBLE_DEVICES"] = FLAGS.device_id
 
 arch_json = json.load(open(FLAGS.arch))
 
-print("Loading dataset")
+print("Loading dataset", flush=True)
 celeba = CelebA(path=None)
 X = celeba.load_dataset(FLAGS.n_jobs)
 
-model = VAEGAN([64, 64, 64, 3], arch_json, FLAGS.tb_id)
+total_steps = int(len(X)/64)
+print("Steps/epoch:", total_steps, flush=True)
+
+model = VAEGAN([64, 64, 64, 3], arch_json, total_steps, FLAGS.tb_id)
 model.compile()
 
 for e in range(500):
-  print("Epoch", e+1)
+  print("Epoch", e+1, flush=True)
   for x_b in batchify(X, 64):
     enc_loss, dec_loss, dis_loss = model.fit(x_b)
   model.save('storage/{}'.format(FLAGS.tb_id))

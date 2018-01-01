@@ -59,26 +59,26 @@ class VAEGANBase(object):
 
     # Get each network's parameters
     t_vars = tf.trainable_variables()
-    self.d_vars = [var for var in t_vars if 'dis' in var.name]
-    self.g_vars = [var for var in t_vars if 'dec' in var.name]
-    self.e_vars = [var for var in t_vars if 'enc' in var.name]
+    self.d_vars = [var for var in t_vars if self.discriminator.scope_name in var.name]
+    self.g_vars = [var for var in t_vars if self.decoder.scope_name in var.name]
+    self.e_vars = [var for var in t_vars if self.encoder.scope_name in var.name]
     if self.verbose == 1:
-      print("Discrimnator Variables:")
+      print("Discrimnator Variables:", flush=True)
       for d_var in self.d_vars:
-        print(d_var)
-      print("Generator (Decoder) Variables:")
+        print(d_var, flush=True)
+      print("Generator (Decoder) Variables:", flush=True)
       for g_var in self.g_vars:
-        print(g_var)
-      print("Encoder Variables:")
+        print(g_var, flush=True)
+      print("Encoder Variables:", flush=True)
       for e_var in self.e_vars:
-        print(e_var)
+        print(e_var, flush=True)
     # Update parameters
     enc_grads = self.encoder.optimizer.compute_gradients(self.encoder_loss, var_list=self.e_vars)
-    self.enc_update_op = self.encoder.optimizer.apply_gradients(enc_grads)
+    self.enc_update_op = self.encoder.optimizer.apply_gradients(enc_grads, self.encoder.global_step)
     dec_grads = self.decoder.optimizer.compute_gradients(self.generator_loss, var_list=self.g_vars)
-    self.dec_update_op = self.decoder.optimizer.apply_gradients(dec_grads)
+    self.dec_update_op = self.decoder.optimizer.apply_gradients(dec_grads, global_step=self.decoder.global_step)
     dis_grads = self.discriminator.optimizer.compute_gradients(self.discriminator_loss, var_list=self.d_vars)
-    self.dis_update_op = self.discriminator.optimizer.apply_gradients(dis_grads)
+    self.dis_update_op = self.discriminator.optimizer.apply_gradients(dis_grads, global_step=self.discriminator.global_step)
 
     tf.summary.scalar('enc_loss', self.encoder_loss)
     tf.summary.scalar('dec_loss', self.generator_loss)

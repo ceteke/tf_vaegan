@@ -1,14 +1,5 @@
 import tensorflow as tf
 
-def variable_decorator(name):
-  def decorator(fn):
-    with tf.variable_scope(name) as scope:
-      print(name)
-      def wrapper(*args, **kwargs):
-        return fn(*args, **kwargs)
-      return wrapper
-  return decorator
-
 def gaussian_loss(x, mu, name='feature_loss'):
   x_mu2 = tf.square(x-mu)
   log_prob = tf.reduce_mean(0.5 * tf.reduce_sum(x_mu2, -1, name=name))  # keep_dims=True,
@@ -48,12 +39,15 @@ def get_element_from_dict(input, dict, training):
 
   return layer
 
-def get_optimizer(name, lr):
-  if name == 'adam':
-    return tf.train.AdamOptimizer(learning_rate=lr)
-  elif name == 'rmsprop':
-    return tf.train.RMSPropOptimizer(learning_rate=lr)
-  elif name == 'sgd':
-    return tf.train.GradientDescentOptimizer(learning_rate=lr)
-  else:
-    raise Exception("Unknown optimizer")
+def get_optimizer(name, lr, decay, total_steps, scope_name):
+  with tf.variable_scope(name=scope_name) as scope:
+    global_step = tf.Variable(0, trainable=False, name='global_step')
+    learning_rate = tf.train.exponential_decay(lr, global_step, staircase=True)
+    if name == 'adam':
+      return global_step, tf.train.AdamOptimizer(learning_rate=learning_rate)
+    elif name == 'rmsprop':
+      return global_step, tf.train.RMSPropOptimizer(learning_rate=learning_rate)
+    elif name == 'sgd':
+      return global_step, tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+    else:
+      raise Exception("Unknown optimizer")

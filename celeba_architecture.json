@@ -1,4 +1,7 @@
 {
+  "optim": "adam",
+  "lr": 0.0002,
+  "decay": 0.9,
   "enc":{
     "net":[
       {"type": "conv", "kernel":[5,5], "units": 64, "stride": [2,2], "bnorm": 1, "act": "relu"},
@@ -7,9 +10,7 @@
       {"type": "flatten"},
       {"type": "fc", "units": 2048, "bnorm": 1, "act": "relu"}
     ],
-    "z_dim": 128,
-    "opt": "adam",
-    "lr": 0.0003
+    "z_dim": 512
   },
 
   "dec":{
@@ -20,9 +21,7 @@
       {"type": "conv_t", "kernel":[5,5], "units": 128, "stride": [2,2], "bnorm": 1, "act": "relu"},
       {"type": "conv_t", "kernel":[5,5], "units": 32, "stride": [2,2], "bnorm": 1, "act": "relu"},
       {"type": "conv_t", "kernel":[5,5], "units": 3, "stride": [1,1], "bnorm": 0, "act": "sigmoid"}
-    ],
-    "opt": "adam",
-    "lr": 0.0003
+    ]
   },
 
   "dis":{
@@ -35,8 +34,6 @@
       {"type": "fc", "units": 512, "bnorm": 1, "act": "relu"},
       {"type": "fc", "units": 1, "bnorm":0}
     ],
-    "opt": "adam",
-    "lr": 0.0003,
     "feature_layer": 3
   },
   "gamma": 1e-1
