@@ -1,5 +1,4 @@
 import tensorflow as tf
-import numpy as np
 
 def variable_decorator(name):
   def decorator(fn):
@@ -9,11 +8,10 @@ def variable_decorator(name):
         return fn(*args, **kwargs)
       return wrapper
   return decorator
-EPSILON = 1e-6
-def GaussianLogDensity(x, mu, name='GaussianLogDensity'):
+
+def gaussian_loss(x, mu, name='feature_loss'):
   x_mu2 = tf.square(x-mu)
-  log_prob = -0.5 * (x_mu2)
-  log_prob = tf.reduce_sum(log_prob, -1, name=name)  # keep_dims=True,
+  log_prob = tf.reduce_mean(0.5 * tf.reduce_sum(x_mu2, -1, name=name))  # keep_dims=True,
   return log_prob
 
 def get_element_from_dict(input, dict, training):
@@ -32,21 +30,23 @@ def get_element_from_dict(input, dict, training):
   else:
     raise Exception("Unknown layer type")
 
-  if dict['bnorm'] == 1:
-    layer = tf.layers.batch_normalization(layer, training=training)
-
   act = dict.get('act', None)
 
   if act == 'relu':
-    return tf.nn.relu(layer)
+    layer = tf.nn.relu(layer)
   elif act == 'tanh':
-    return tf.nn.tanh(layer)
+    layer = tf.nn.tanh(layer)
   elif act == 'sigmoid':
-    return tf.nn.sigmoid(layer)
+    layer = tf.nn.sigmoid(layer)
   elif act is None:
-    return layer
+    layer = layer
   else:
     raise Exception("Unknown activation type")
+
+  if dict['bnorm'] == 1:
+    layer = tf.layers.batch_normalization(layer, training=training)
+
+  return layer
 
 def get_optimizer(name, lr):
   if name == 'adam':

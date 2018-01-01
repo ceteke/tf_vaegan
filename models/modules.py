@@ -47,5 +47,5 @@ class DiscriminatorBase(ModuleBase):
     for i, layer in enumerate(self.arch['net']):
       x = get_element_from_dict(x, layer, training)
       if i == self.feature_layer - 1:
-        feature_layer = x
+        feature_layer = tf.layers.flatten(x)
     return feature_layer, x
