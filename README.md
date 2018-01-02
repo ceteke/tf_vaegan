@@ -42,4 +42,16 @@ Then you have to define 3 keys: ```enc```, ```dec``` and ```dis```. These will b
 Each layer has a ```type``` key. Those can be: ```flatten```, ```fc```, ```conv```,  ```conv_t``` and ```reshape```.  
 ```bnorm```: This denotes Batch Normalization. If it is 1 BN is used if 0 BN is not used. This has to be provided for layers that has parameters.  
 ```act```: This the activation. ```relu```, ```sigmoid``` and ```tanh``` can be used. Again this has to be provided for layers that has parameters.  
-For an example please see ```celeba_architecture.json```.
+For an example please see ```celeba_architecture.json```.  
+After you have developed your own architecture in order to use it in the model:  
+```python
+from models.vaegan import VAEGAN
+import json
+arch_json = json.load(open(<your_json>))
+model = VAEGAN(<input_size>, arch_json, total_steps, tb_id)
+model.compile()
+...
+enc_loss, dec_loss, dis_loss = model.fit(x)
+```
+```input_size```: [batch_size, image_height, image_width, channel_size]  
+```total_steps```: Number of steps to perform learning rate decayin.
