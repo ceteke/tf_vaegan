@@ -22,10 +22,17 @@ class VAEGANBase(object):
     self.training = tf.placeholder(dtype=tf.bool, name='training')
 
   def kl_divergence(self, mu, sigma):
-    return -0.5 * tf.reduce_sum(1 + tf.log(tf.square(sigma)) - tf.square(mu) - tf.square(sigma), -1)
+    with tf.name_scope("kl_div"):
+      return -0.5 * tf.reduce_sum(1 + tf.log(tf.square(sigma)) - tf.square(mu) - tf.square(sigma), -1)
 
   def sample_latent(self):
     return tf.random_normal(shape=[self.input_shape[0], self.encoder.latent_size], name='prior')
+
+  def zero_uniform(self):
+    return tf.random_uniform([self.input_shape[0], 1], 0, 0.3, self.dtype)
+
+  def one_uniform(self):
+    return tf.random_uniform([self.input_shape[0], 1], 0.7, 1.2, self.dtype)
 
   def build_graph(self):
     z, mu, sigma = self.encoder(self.input, training=self.training, reuse=False)
@@ -40,22 +47,23 @@ class VAEGANBase(object):
     _, sampled_disc = self.discriminator(x_p, training=self.training)
 
     # Reconstruction Loss (not pixelwise but featurewise)
-    feature_loss = gaussian_loss(dis_l_x, dis_l_tilda)
+    feature_loss = -tf.reduce_mean(gaussian_loss(dis_l_x, dis_l_tilda, tf.zeros_like(dis_l_tilda)))
     # Encoder Loss
     prior_loss = tf.reduce_mean(self.kl_divergence(mu, sigma))
 
     self.encoder_loss = prior_loss + feature_loss
 
     # Discriminator Loss
-    d_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.ones_like(real_disc), logits=real_disc))
-    d_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.zeros_like(fake_disc), logits=fake_disc))
-    d_sampled = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.zeros_like(sampled_disc), logits=sampled_disc))
+    d_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=self.one_uniform(), logits=real_disc))
+    d_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=self.zero_uniform(), logits=fake_disc))
+    d_sampled = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=self.zero_uniform(), logits=sampled_disc))
     self.discriminator_loss = d_real + d_fake + d_sampled
 
     # Genereator Loss
-    g_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.ones_like(fake_disc), logits=fake_disc))
-    g_sampled = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf.ones_like(sampled_disc), logits=sampled_disc))
-    self.generator_loss = g_fake + g_sampled + self.gamma*feature_loss
+    g_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=self.one_uniform(), logits=fake_disc))
+    g_sampled = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=self.one_uniform(), logits=sampled_disc))
+    generator_dis_loss = g_fake + g_sampled
+    self.generator_loss = generator_dis_loss + self.gamma*feature_loss
 
     # Get each network's parameters
     t_vars = tf.trainable_variables()
@@ -81,11 +89,14 @@ class VAEGANBase(object):
     self.dis_update_op = self.discriminator.optimizer.apply_gradients(dis_grads, global_step=self.discriminator.global_step)
 
     tf.summary.scalar('enc_loss', self.encoder_loss)
+    tf.summary.scalar('kl_div', prior_loss)
+    tf.summary.scalar('feature_loss', feature_loss)
+    tf.summary.scalar('generator_loss', generator_dis_loss)
     tf.summary.scalar('dec_loss', self.generator_loss)
     tf.summary.scalar('dis_loss', self.discriminator_loss)
-    tf.summary.image('reconstructed', x_tilda)
-    tf.summary.image('sampled', x_p)
-    tf.summary.image('input', self.input)
+    # tf.summary.image('reconstructed', x_tilda)
+    # tf.summary.image('sampled', x_p)
+    # tf.summary.image('input', self.input)
     self.merged = tf.summary.merge_all()
 
   def compile(self):

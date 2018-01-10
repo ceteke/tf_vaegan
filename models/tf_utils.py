@@ -1,17 +1,29 @@
 import tensorflow as tf
+import numpy as np
+EPSILON = 1e-6
 
-def gaussian_loss(x, mu, name='feature_loss'):
-  x_mu2 = tf.square(x-mu)
-  log_prob = tf.reduce_mean(0.5 * tf.reduce_sum(x_mu2, -1, name=name))  # keep_dims=True,
+def gaussian_loss(x, mu, log_var, name='feature_loss'):
+  with tf.name_scope("feature_loss"):
+    c = np.log(2 * np.pi)
+    var = tf.exp(log_var)
+    x_mu2 = tf.square(x - mu)
+    x_mu2_over_var = tf.div(x_mu2, var + EPSILON)
+    log_prob = -0.5 * (c + log_var + x_mu2_over_var)
+    log_prob = tf.reduce_sum(log_prob, -1, name=name)
   return log_prob
 
 def get_element_from_dict(input, dict, training):
   t = dict['type']
 
   if t == 'conv':
-    layer = tf.layers.conv2d(input, dict['units'], dict['kernel'], dict['stride'], padding='SAME')
+    pad = dict.get('pad', 'VALID')
+    layer = tf.layers.conv2d(input, dict['units'], dict['kernel'], dict['stride'], padding=pad)
   elif t == 'conv_t':
-    layer = tf.layers.conv2d_transpose(input, dict['units'], dict['kernel'], dict['stride'], padding='SAME')
+    pad = dict.get('pad', 'VALID')
+    layer = tf.layers.conv2d_transpose(input, dict['units'], dict['kernel'], dict['stride'], padding=pad)
+  elif t == 'maxpool':
+    pad = dict.get('pad', 'VALID')
+    return tf.layers.max_pooling2d(input, dict['pool_size'], dict['stride'], padding=pad)
   elif t == 'fc':
     layer = tf.layers.dense(input, dict['units'])
   elif t == 'flatten':
@@ -22,12 +34,15 @@ def get_element_from_dict(input, dict, training):
     raise Exception("Unknown layer type")
 
   act = dict.get('act', None)
+  bnorm = dict.get('bnorm', 0)
 
-  if dict['bnorm'] == 1:
+  if bnorm == 1:
     layer = tf.layers.batch_normalization(layer, training=training)
 
   if act == 'relu':
     layer = tf.nn.relu(layer)
+  if act == 'l_relu':
+    layer = tf.nn.leaky_relu(layer)
   elif act == 'tanh':
     layer = tf.nn.tanh(layer)
   elif act == 'sigmoid':

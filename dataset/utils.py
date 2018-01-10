@@ -1,5 +1,12 @@
 import numpy as np
 
+def normalize_unit_sphere(points):
+  centroid = np.mean(points, axis=0)
+  points -= centroid
+  furthest_distance = np.max(np.sqrt(np.sum(abs(points) ** 2, axis=-1)))
+  points /= furthest_distance
+  return points
+
 def batchify(X, n):
   l = len(X)
   for ndx in range(0, l, n):
