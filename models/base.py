@@ -22,8 +22,7 @@ class VAEGANBase(object):
     self.training = tf.placeholder(dtype=tf.bool, name='training')
 
   def kl_divergence(self, mu, sigma):
-    with tf.name_scope("kl_div"):
-      return -0.5 * tf.reduce_sum(1 + tf.log(tf.square(sigma)) - tf.square(mu) - tf.square(sigma), -1)
+    return -0.5 * tf.reduce_sum(1 + tf.log(tf.square(sigma)) - tf.square(mu) - tf.square(sigma), -1)
 
   def sample_latent(self):
     return tf.random_normal(shape=[self.input_shape[0], self.encoder.latent_size], name='prior')
@@ -47,7 +46,7 @@ class VAEGANBase(object):
     _, sampled_disc = self.discriminator(x_p, training=self.training)
 
     # Reconstruction Loss (not pixelwise but featurewise)
-    feature_loss = -tf.reduce_mean(gaussian_loss(dis_l_x, dis_l_tilda, tf.zeros_like(dis_l_tilda)))
+    feature_loss = gaussian_loss(dis_l_x, dis_l_tilda)
     # Encoder Loss
     prior_loss = tf.reduce_mean(self.kl_divergence(mu, sigma))
 

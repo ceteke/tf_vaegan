@@ -4,19 +4,21 @@
   "decay": 1.0,
   "enc":{
     "net":[
-      {"type": "conv", "kernel":[1,3], "units": 64, "stride": [1,1], "act": "l_relu", "bnorm": 1},
-      {"type": "conv", "kernel":[1,1], "units": 128, "stride": [1,1], "act": "l_relu", "bnorm": 1},
-      {"type": "conv", "kernel":[1,1], "units": 1024, "stride": [1,1], "act": "l_relu", "bnorm": 1},
+      {"type": "conv", "kernel":[1,3], "units": 64, "stride": [1,1], "act": "relu", "bnorm": 1},
+      {"type": "conv", "kernel":[1,1], "units": 128, "stride": [1,1], "act": "relu", "bnorm": 1},
+      {"type": "conv", "kernel":[1,1], "units": 1024, "stride": [1,1], "act": "relu", "bnorm": 1},
       {"type": "maxpool", "pool_size":[2048,1], "stride":[1,1]},
       {"type": "flatten"}
     ],
-    "z_dim": 256
+    "z_dim": 100
   },
 
   "dec":{
     "net":[
+      {"type": "fc", "units": 128, "act": "l_relu", "bnorm": 1},
+      {"type": "fc", "units": 128, "act": "l_relu", "bnorm": 1},
       {"type": "fc", "units": 512, "act": "l_relu", "bnorm": 1},
-      {"type": "fc", "units": 2048, "act": "l_relu", "bnorm": 1},
+      {"type": "fc", "units": 1024, "act": "l_relu", "bnorm": 1},
       {"type": "fc", "units": 6144, "act": "sigmoid"},
       {"type": "reshape", "shape": [-1, 2048, 3, 1]}
     ]
@@ -26,11 +28,13 @@
     "net":[
       {"type": "conv", "kernel":[1,3], "units": 64, "stride": [1,1], "act": "l_relu", "bnorm": 1},
       {"type": "conv", "kernel":[1,1], "units": 128, "stride": [1,1], "act": "l_relu", "bnorm": 1},
-      {"type": "conv", "kernel":[1,1], "units": 1024, "stride": [1,1], "act": "l_relu", "bnorm": 1},
+      {"type": "conv", "kernel":[1,1], "units": 256, "stride": [1,1], "act": "l_relu", "bnorm": 1},
+      {"type": "conv", "kernel":[1,1], "units": 256, "stride": [1,1], "act": "l_relu", "bnorm": 1},
+      {"type": "conv", "kernel":[1,1], "units": 512, "stride": [1,1], "act": "l_relu", "bnorm": 1},
       {"type": "maxpool", "pool_size":[2048,1], "stride":[1,1]},
       {"type": "flatten"},
-      {"type": "fc", "units": 512, "act": "l_relu", "bnorm": 1},
       {"type": "fc", "units": 128, "act": "l_relu", "bnorm": 1},
+      {"type": "fc", "units": 64, "act": "l_relu", "bnorm": 1},
       {"type": "fc", "units": 1}
     ],
     "feature_layer": 3

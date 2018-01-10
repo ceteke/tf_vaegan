@@ -1,15 +1,8 @@
 import tensorflow as tf
-import numpy as np
-EPSILON = 1e-6
 
-def gaussian_loss(x, mu, log_var, name='feature_loss'):
-  with tf.name_scope("feature_loss"):
-    c = np.log(2 * np.pi)
-    var = tf.exp(log_var)
-    x_mu2 = tf.square(x - mu)
-    x_mu2_over_var = tf.div(x_mu2, var + EPSILON)
-    log_prob = -0.5 * (c + log_var + x_mu2_over_var)
-    log_prob = tf.reduce_sum(log_prob, -1, name=name)
+def gaussian_loss(x, mu, name='feature_loss'):
+  x_mu2 = 0.5*tf.square(x - mu)
+  log_prob = tf.reduce_mean(tf.reduce_sum(x_mu2, -1, name=name))
   return log_prob
 
 def get_element_from_dict(input, dict, training):
