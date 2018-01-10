@@ -41,7 +41,7 @@ def get_element_from_dict(input, dict, training):
 
   if act == 'relu':
     layer = tf.nn.relu(layer)
-  if act == 'l_relu':
+  elif act == 'l_relu':
     layer = tf.nn.leaky_relu(layer)
   elif act == 'tanh':
     layer = tf.nn.tanh(layer)
@@ -50,7 +50,7 @@ def get_element_from_dict(input, dict, training):
   elif act is None:
     layer = layer
   else:
-    raise Exception("Unknown activation type")
+    raise Exception("Unknown activation type", act)
 
   return layer
 
