@@ -17,6 +17,9 @@ class VAEGANBase(object):
   def save(self, path):
     self.saver.save(self.sess, join(path, 'vaegan'))
 
+  def load(self, path):
+    self.saver.restore(self.sess, path)
+
   def form_variables(self):
     self.input = tf.placeholder(dtype=self.dtype, shape=self.input_shape, name='input')
     self.training = tf.placeholder(dtype=tf.bool, name='training')
@@ -35,13 +38,16 @@ class VAEGANBase(object):
 
   def build_graph(self):
     z, mu, sigma = self.encoder(self.input, training=self.training, reuse=False)
+    self.rep_op = z
 
     x_tilda = self.decoder(z, training=self.training, reuse=False)
+    self.reconstruct_op = x_tilda
     dis_l_tilda, fake_disc = self.discriminator(x_tilda, training=self.training, reuse=False)
     dis_l_x, real_disc = self.discriminator(self.input, training=self.training)
 
     z_p = self.sample_latent()
     x_p = self.decoder(z_p, training=self.training)
+    self.sample_op = x_p
 
     _, sampled_disc = self.discriminator(x_p, training=self.training)
 
@@ -121,3 +127,12 @@ class VAEGANBase(object):
                       feed_dict={self.input: X,
                                  self.training: False})
     return t[0], t[1], t[2]
+
+  def reconstruct(self, X):
+    return self.sess.run(self.reconstruct_op, feed_dict={self.input: X, self.training: False})
+
+  def representation(self, X):
+    return self.sess.run(self.rep_op, feed_dict={self.input: X, self.training: False})
+
+  def sample(self):
+    return self.sess.run(self.sample_op, feed_dict={self.training: False})

@@ -17,6 +17,9 @@ def get_element_from_dict(input, dict, training):
   elif t == 'maxpool':
     pad = dict.get('pad', 'VALID')
     return tf.layers.max_pooling2d(input, dict['pool_size'], dict['stride'], padding=pad)
+  elif t == 'avgpool':
+    pad = dict.get('pad', 'VALID')
+    return tf.layers.average_pooling2d(input, dict['pool_size'], dict['stride'], padding=pad)
   elif t == 'fc':
     layer = tf.layers.dense(input, dict['units'])
   elif t == 'flatten':
@@ -28,9 +31,6 @@ def get_element_from_dict(input, dict, training):
 
   act = dict.get('act', None)
   bnorm = dict.get('bnorm', 0)
-
-  if bnorm == 1:
-    layer = tf.layers.batch_normalization(layer, training=training)
 
   if act == 'relu':
     layer = tf.nn.relu(layer)
@@ -44,6 +44,9 @@ def get_element_from_dict(input, dict, training):
     layer = layer
   else:
     raise Exception("Unknown activation type", act)
+
+  if bnorm == 1:
+    layer = tf.layers.batch_normalization(layer, training=training)
 
   return layer
 

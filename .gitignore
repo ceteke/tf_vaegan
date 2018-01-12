@@ -8,3 +8,4 @@ log
 !storage/__init__.py
 cifar10
 *.pk
+*.pcd
